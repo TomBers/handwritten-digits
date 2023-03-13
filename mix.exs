@@ -47,11 +47,11 @@ defmodule Digits.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:tailwind, "~> 0.1", runtime: Mix.env() == :dev},
-      {:axon, "~> 0.1.0-dev", github: "elixir-nx/axon"},
-      {:exla, "~> 0.1.0-dev", github: "elixir-nx/nx", sparse: "exla"},
-      {:nx, "~> 0.1.0-dev", github: "elixir-nx/nx", sparse: "nx", override: true},
+      {:axon, "~> 0.5.1"},
+      {:exla, "~> 0.5.1"},
+      {:nx, "~> 0.5.1"},
       {:scidata, "~> 0.1.5"},
-      {:evision, "~> 0.1.0-dev", github: "cocoa-xu/evision", branch: "main"}
+      {:evision, "~> 0.1.28"}
     ]
   end
 

@@ -6,6 +6,7 @@ defmodule Digits.Model do
   require Axon
 
   def download do
+    IO.inspect("Downloading MNIST dataset")
     Scidata.MNIST.download()
   end
 
@@ -24,7 +25,7 @@ defmodule Digits.Model do
   end
 
   def new({channels, height, width}) do
-    Axon.input({nil, channels, height, width})
+    Axon.input("input_0", shape: {nil, channels, height, width})
     |> Axon.flatten()
     |> Axon.dense(128, activation: :relu)
     |> Axon.dense(10, activation: :softmax)
@@ -35,18 +36,18 @@ defmodule Digits.Model do
     |> Axon.Loop.trainer(:categorical_cross_entropy, Axon.Optimizers.adam(0.01))
     |> Axon.Loop.metric(:accuracy, "Accuracy")
     |> Axon.Loop.validate(model, validation_data)
-    |> Axon.Loop.run(training_data, compiler: EXLA, epochs: 10)
+    |> Axon.Loop.run(training_data, %{}, compiler: EXLA, epochs: 10)
   end
 
   def test(model, state, test_data) do
     model
-    |> Axon.Loop.evaluator(state)
+    |> Axon.Loop.evaluator()
     |> Axon.Loop.metric(:accuracy, "Accuracy")
-    |> Axon.Loop.run(test_data)
+    |> Axon.Loop.run(test_data, state)
   end
 
   def save!(model, state) do
-    contents = :erlang.term_to_binary({model, state})
+    contents = Axon.serialize(model, state)
 
     File.write!(path(), contents)
   end
@@ -54,7 +55,7 @@ defmodule Digits.Model do
   def load! do
     path()
     |> File.read!()
-    |> :erlang.binary_to_term()
+    |> Axon.deserialize()
   end
 
   def path do
@@ -62,19 +63,20 @@ defmodule Digits.Model do
   end
 
   def predict(path) do
-    {:ok, mat} = Evision.imread(path, flags: Evision.cv_IMREAD_GRAYSCALE)
-    {:ok, mat} = Evision.resize(mat, [28, 28])
+    mat = Evision.imread(path, flags: Evision.Constant.cv_IMREAD_GRAYSCALE())
+    mat = Evision.resize(mat, {28, 28})
 
     data =
-      Evision.Nx.to_nx(mat)
+      Evision.Mat.to_nx(mat)
       |> Nx.reshape({1, 28, 28})
       |> List.wrap()
       |> Nx.stack()
+      |> Nx.backend_transfer()
 
     {model, state} = load!()
 
     model
-    |> Axon.predict(state, data, compiler: EXLA)
+    |> Axon.predict(state, data)
     |> Nx.argmax()
     |> Nx.to_number()
   end
