@@ -31,12 +31,12 @@ defmodule Digits.Model do
     |> Axon.dense(10, activation: :softmax)
   end
 
-  def train(model, training_data, validation_data) do
+  def train(model, training_data, validation_data, epochs \\ 10) do
     model
     |> Axon.Loop.trainer(:categorical_cross_entropy, Axon.Optimizers.adam(0.01))
     |> Axon.Loop.metric(:accuracy, "Accuracy")
     |> Axon.Loop.validate(model, validation_data)
-    |> Axon.Loop.run(training_data, %{}, compiler: EXLA, epochs: 10)
+    |> Axon.Loop.run(training_data, compiler: EXLA, epochs: epochs)
   end
 
   def test(model, state, test_data) do
@@ -63,6 +63,7 @@ defmodule Digits.Model do
   end
 
   def predict(path) do
+
     mat = Evision.imread(path, flags: Evision.Constant.cv_IMREAD_GRAYSCALE())
     mat = Evision.resize(mat, {28, 28})
 
