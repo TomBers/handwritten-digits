@@ -6,19 +6,19 @@ defmodule Mix.Tasks.Train do
   alias Digits
 
   def run(_) do
-    EXLA.set_as_nx_default([:tpu, :cuda, :rocm, :host])
-
-    {images, labels} = Digits.Model.download()
+    {images, labels} = load_mnist()
 
     images =
       images
       |> Digits.Model.transform_images()
-      |> Nx.to_batched_list(32)
+      |> Nx.to_batched(32)
+      |> Enum.to_list()
 
     labels =
       labels
       |> Digits.Model.transform_labels()
-      |> Nx.to_batched_list(32)
+      |> Nx.to_batched(32)
+      |> Enum.to_list()
 
     data = Enum.zip(images, labels)
 
@@ -41,5 +41,34 @@ defmodule Mix.Tasks.Train do
     Digits.Model.save!(model, state)
 
     :ok
+  end
+
+  defp load_mnist() do
+    if !File.exists?(path()) do
+      save_mnist()
+    end
+
+    load!()
+  end
+
+  defp save_mnist do
+    Digits.Model.download()
+    |> save!()
+  end
+
+  defp save!(data) do
+    contents = :erlang.term_to_binary(data)
+
+    File.write!(path(), contents)
+  end
+
+  defp load! do
+    path()
+    |> File.read!()
+    |> :erlang.binary_to_term()
+  end
+
+  defp path do
+    Path.join(Application.app_dir(:digits, "priv"), "mnist.axon")
   end
 end

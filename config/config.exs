@@ -7,6 +7,9 @@
 # General application configuration
 import Config
 
+# Set the backend for Nx
+config :nx, :default_backend, EXLA.Backend
+
 # Configures the endpoint
 config :digits, DigitsWeb.Endpoint,
   url: [host: "localhost"],
